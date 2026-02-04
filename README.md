@@ -21,7 +21,8 @@ bakery-reviews-nlp/
 │   ├── 03_analise_sentimentos_llm.py     # Análise de sentimentos com LLM
 │   ├── 04_analises_categorias.py         # Detalhamento de problemas e preços
 │   ├── 05_gerar_graficos_analises.py     # Geração de gráficos de análises
-│   └── 06_analise_posicionamento_digital.py # Análise resposta do dono e Local Guide
+│   ├── 06_analise_posicionamento_digital.py # Análise resposta do dono e Local Guide
+│   └── 07_gerar_figuras_dissertacao.py   # Geração de TODAS as figuras (11-30)
 ├── config/
 │   └── exemplo_topicos_para_selecao.json # Exemplo de JSON para curadoria
 ├── data/
@@ -188,6 +189,40 @@ python scripts/06_analise_posicionamento_digital.py
 3. `fig_localguide_rating_medio.png` - Rating médio Local Guide vs Não Guide
 4. `fig_localguide_distribuicao_rating.png` - Distribuição de ratings por tipo
 5. `fig_interacao_resposta_localguide.png` - Interação Resposta × Local Guide
+
+### Etapa 8: Geração de TODAS as Figuras da Dissertação
+
+```bash
+python scripts/07_gerar_figuras_dissertacao.py
+```
+
+**Entrada:** `dataset_analises_completas.xlsx`  
+**Saída:** 20 figuras PNG na pasta `outputs/`
+
+**Figuras geradas (11-30):**
+
+| Figura | Descrição |
+|--------|-----------|
+| 11 | Distribuição clusters por tópicos (UMAP) |
+| 12 | Distribuição clusters por categoria gerencial (UMAP) |
+| 13 | Matriz de similaridade semântica entre categorias |
+| 14 | Matriz de concordância BERTopic vs LLM |
+| 15 | Distribuição de avaliações por número de categorias |
+| 16 | Frequência de menções por categoria gerencial |
+| 17 | Polaridade de sentimentos por categoria gerencial |
+| 18 | Boxplot tamanho das avaliações por sentimento |
+| 19 | Curvas de densidade do tamanho por sentimento |
+| 20 | Distribuição de notas com/sem resposta do dono |
+| 21 | Percentual de resposta por nível de rating |
+| 22 | Rating médio Local Guide vs Não Guide |
+| 23 | Distribuição de ratings por tipo de usuário |
+| 24 | Distribuição de sentimentos por nota atribuída |
+| 25 | Score médio de sentimento por nota |
+| 26 | Frequência de problemas por subcategoria |
+| 27 | Score médio de sentimento por subcategoria |
+| 28 | Distribuição dos motivadores por subcategoria |
+| 29 | Frequência de menções por subcategoria e motivador |
+| 30 | Mapa de priorização de ações corretivas |
 
 ## 📊 Categorias Gerenciais
 

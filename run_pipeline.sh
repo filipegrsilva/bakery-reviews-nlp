@@ -24,7 +24,12 @@ echo ""
 echo "  1) Etapa 1: Extração de tópicos (BERTopic) [~2-3h]"
 echo "  2) Etapa 2: Aplicar merges e categorias [~1min]"
 echo "  3) Etapa 3: Análise de sentimentos (LLM) [~10-20h]"
-echo "  4) Executar todas as etapas"
+echo "  4) Etapa 4: Análise de categorias [~2-4h]"
+echo "  5) Etapa 5: Gerar gráficos de análises [~1min]"
+echo "  6) Etapa 6: Análise de posicionamento digital [~1min]"
+echo "  7) Etapa 7: Gerar TODAS as figuras da dissertação [~5-30min]"
+echo "  8) Executar etapas 4-7 (pós-processamento)"
+echo "  9) Executar pipeline completo"
 echo "  0) Sair"
 echo ""
 read -p "Opção: " opcao
@@ -62,7 +67,55 @@ case $opcao in
         ;;
     4)
         echo ""
-        echo "⚠️ Executando todas as etapas..."
+        echo "Executando Etapa 4: Análise de categorias..."
+        python scripts/04_analises_categorias.py
+        echo ""
+        echo "✅ Etapa 4 concluída!"
+        ;;
+    5)
+        echo ""
+        echo "Executando Etapa 5: Gerar gráficos..."
+        python scripts/05_gerar_graficos_analises.py
+        echo ""
+        echo "✅ Etapa 5 concluída!"
+        ;;
+    6)
+        echo ""
+        echo "Executando Etapa 6: Posicionamento digital..."
+        python scripts/06_analise_posicionamento_digital.py
+        echo ""
+        echo "✅ Etapa 6 concluída!"
+        ;;
+    7)
+        echo ""
+        echo "Executando Etapa 7: Gerar TODAS as figuras da dissertação..."
+        python scripts/07_gerar_figuras_dissertacao.py
+        echo ""
+        echo "✅ Etapa 7 concluída!"
+        echo "📊 Figuras salvas em outputs/"
+        ;;
+    8)
+        echo ""
+        echo "Executando etapas 4-7 (pós-processamento)..."
+        echo ""
+        echo "=== Etapa 4: Análise de categorias ==="
+        python scripts/04_analises_categorias.py
+        echo ""
+        echo "=== Etapa 5: Gráficos de análises ==="
+        python scripts/05_gerar_graficos_analises.py
+        echo ""
+        echo "=== Etapa 6: Posicionamento digital ==="
+        python scripts/06_analise_posicionamento_digital.py
+        echo ""
+        echo "=== Etapa 7: Figuras da dissertação ==="
+        python scripts/07_gerar_figuras_dissertacao.py
+        echo ""
+        echo "✅ Pós-processamento concluído!"
+        echo "📊 Todas as figuras salvas em outputs/"
+        ;;
+    9)
+        echo ""
+        echo "⚠️ Executando pipeline completo..."
         echo "Isso pode levar 15-25 horas!"
         read -p "Continuar? (s/n): " confirma
         if [ "$confirma" != "s" ]; then
@@ -87,7 +140,24 @@ case $opcao in
         python scripts/03_analise_sentimentos_llm.py
         
         echo ""
-        echo "✅ Pipeline concluído!"
+        echo "=== Etapa 4: Análise de categorias ==="
+        python scripts/04_analises_categorias.py
+        
+        echo ""
+        echo "=== Etapa 5: Gráficos de análises ==="
+        python scripts/05_gerar_graficos_analises.py
+        
+        echo ""
+        echo "=== Etapa 6: Posicionamento digital ==="
+        python scripts/06_analise_posicionamento_digital.py
+        
+        echo ""
+        echo "=== Etapa 7: Figuras da dissertação ==="
+        python scripts/07_gerar_figuras_dissertacao.py
+        
+        echo ""
+        echo "✅ Pipeline completo concluído!"
+        echo "📊 Todas as figuras salvas em outputs/"
         ;;
     0)
         echo "Saindo..."
