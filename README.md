@@ -279,6 +279,5 @@ Contribuições são bem-vindas! Abra uma issue ou pull request.
 
 ## 📧 Contato
 
-- **Autor:** Filipe
-- **Email:** seu-email@usp.br
-- **LinkedIn:** [seu-perfil](https://linkedin.com/in/seu-perfil)
+- **Autor:** Filipe Guilherme Ramos 
+- **Email:** filipegrs@usp.br
