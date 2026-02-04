@@ -1,0 +1,28 @@
+# Análise de Sentimentos em Avaliações de Padarias
+# Dependências do projeto
+
+# BERTopic e NLP
+bertopic>=0.15.0
+sentence-transformers>=2.2.0
+umap-learn>=0.5.3
+hdbscan>=0.8.29
+nltk>=3.8.1
+
+# Machine Learning
+scikit-learn>=1.3.0
+numpy>=1.24.0
+
+# Manipulação de dados
+pandas>=2.0.0
+openpyxl>=3.1.0  # Para Excel
+
+# Visualização
+matplotlib>=3.7.0
+seaborn>=0.12.0
+
+# HTTP requests (para Ollama)
+requests>=2.31.0
+tqdm>=4.65.0
+
+# Utilitários
+python-dateutil>=2.8.2

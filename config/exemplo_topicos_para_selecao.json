@@ -1,0 +1,68 @@
+{
+  "_INSTRUCOES": "Este é um exemplo de como preencher o arquivo de tópicos para curadoria.",
+  "estatisticas": {
+    "total_documentos": 340939,
+    "total_topicos": 89,
+    "outliers": 150000,
+    "outliers_percentual": 44.0
+  },
+  "topicos": {
+    "0": {
+      "id": 0,
+      "nome": "cafe_manha_padaria_delicioso_otimo",
+      "count": 18569,
+      "percentual": 5.45,
+      "top_palavras": ["cafe", "manha", "padaria", "delicioso", "otimo"],
+      "exemplos": [
+        "Café da manhã maravilhoso, pães fresquinhos!",
+        "Melhor café da manhã da região"
+      ],
+      "selecionado": true,
+      "categoria": "comida",
+      "merge_para": null
+    },
+    "1": {
+      "id": 1,
+      "nome": "produtos_variedade_opcoes_qualidade",
+      "count": 11974,
+      "percentual": 3.51,
+      "top_palavras": ["produtos", "variedade", "opcoes", "qualidade"],
+      "exemplos": [
+        "Grande variedade de produtos",
+        "Muitas opções de pães e doces"
+      ],
+      "selecionado": true,
+      "categoria": "comida",
+      "merge_para": null
+    },
+    "2": {
+      "id": 2,
+      "nome": "ambiente_agradavel_local_bonito",
+      "count": 11258,
+      "percentual": 3.30,
+      "top_palavras": ["ambiente", "agradavel", "local", "bonito", "decoracao"],
+      "exemplos": [
+        "Ambiente muito agradável e aconchegante",
+        "Local bonito e bem decorado"
+      ],
+      "selecionado": true,
+      "categoria": "ambiente",
+      "merge_para": null
+    },
+    "7": {
+      "id": 7,
+      "nome": "pao_queijo_mineiro_delicia",
+      "count": 2500,
+      "percentual": 0.73,
+      "top_palavras": ["pao", "queijo", "mineiro", "delicia"],
+      "exemplos": [
+        "Pão de queijo mineiro sensacional",
+        "Melhor pão de queijo que já comi"
+      ],
+      "selecionado": true,
+      "categoria": "comida",
+      "merge_para": 0,
+      "_comentario": "Tópico 7 será unido ao tópico 0 (café da manhã)"
+    }
+  }
+}
