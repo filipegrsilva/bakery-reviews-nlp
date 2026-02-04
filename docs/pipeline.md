@@ -75,6 +75,56 @@ Este documento descreve o fluxo completo de processamento das avaliações.
                                    ▼
                   dataset_com_sentimentos.xlsx
                   + colunas: llm_analise_json, llm_num_categorias
+                                   │
+                                   ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│              ETAPA 5: ANÁLISE DE PROBLEMAS E PREÇOS                      │
+│              04_analises_categorias.py                                   │
+│                                                                          │
+│  • Classificar PROBLEMAS em subcategorias via LLM                        │
+│  • Extrair PRODUTO e MOTIVADOR de menções de preço                       │
+│  • Calcular scores médios de sentimento                                  │
+│  • Gerar relatório estatístico                                           │
+│                                                                          │
+│  Modelo: Llama 3.1 8B (via Ollama)                                       │
+│  Tempo: ~2-4 horas                                                       │
+└─────────────────────────────────────────────────────────────────────────┘
+                                   │
+                                   ▼
+                  dataset_analises_completas.xlsx
+                  + colunas: problemas_*, preco_*
+                                   │
+                                   ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│                    ETAPA 6: GERAÇÃO DE GRÁFICOS                          │
+│                    05_gerar_graficos_analises.py                         │
+│                                                                          │
+│  • 4 gráficos de PROBLEMAS (frequência, gravidade, matriz, heatmap)      │
+│  • 5 gráficos de PREÇO (sentimento, produtos, motivadores, correlação)   │
+│                                                                          │
+│  Tempo: ~1 minuto                                                        │
+└─────────────────────────────────────────────────────────────────────────┘
+                                   │
+                                   ▼
+                        outputs/*.png
+                        (9 gráficos)
+                                   │
+                                   ▼
+┌─────────────────────────────────────────────────────────────────────────┐
+│              ETAPA 7: ANÁLISE DE POSICIONAMENTO DIGITAL                  │
+│              06_analise_posicionamento_digital.py                        │
+│                                                                          │
+│  • Impacto da resposta do dono no rating                                 │
+│  • Comportamento de Local Guides vs usuários comuns                      │
+│  • Interação entre resposta do dono e Local Guide                        │
+│  • Testes estatísticos (t-test)                                          │
+│                                                                          │
+│  Tempo: ~1 minuto                                                        │
+└─────────────────────────────────────────────────────────────────────────┘
+                                   │
+                                   ▼
+                        outputs/*.png
+                        (5 gráficos adicionais)
 ```
 
 ## Categorias Gerenciais

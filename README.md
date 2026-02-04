@@ -8,6 +8,8 @@ Este repositório contém os scripts utilizados para:
 1. **Extração de tópicos** - Identificação automática de temas nas avaliações usando BERTopic
 2. **Categorização gerencial** - Classificação dos tópicos em categorias de negócio
 3. **Análise de sentimentos** - Classificação de sentimentos por categoria usando LLM (Llama 3.1)
+4. **Análise de problemas e preços** - Detalhamento de subcategorias, produtos e motivadores
+5. **Geração de gráficos** - Visualizações para análise gerencial
 
 ## 🗂️ Estrutura do Projeto
 
@@ -16,7 +18,10 @@ bakery-reviews-nlp/
 ├── scripts/
 │   ├── 01_extrair_topicos_bertopic.py    # Extração de tópicos com BERTopic
 │   ├── 02_aplicar_merges_categorias.py   # Aplicar merges e categorias
-│   └── 03_analise_sentimentos_llm.py     # Análise de sentimentos com LLM
+│   ├── 03_analise_sentimentos_llm.py     # Análise de sentimentos com LLM
+│   ├── 04_analises_categorias.py         # Detalhamento de problemas e preços
+│   ├── 05_gerar_graficos_analises.py     # Geração de gráficos de análises
+│   └── 06_analise_posicionamento_digital.py # Análise resposta do dono e Local Guide
 ├── config/
 │   └── exemplo_topicos_para_selecao.json # Exemplo de JSON para curadoria
 ├── data/
@@ -127,6 +132,62 @@ python scripts/03_analise_sentimentos_llm.py
 |--------|-----------|
 | `llm_analise_json` | JSON com análise detalhada |
 | `llm_num_categorias` | Número de categorias identificadas |
+
+### Etapa 5: Análise de Problemas e Preços
+
+```bash
+python scripts/04_analises_categorias.py
+```
+
+**Entrada:** `dataset_com_sentimentos.xlsx`  
+**Saída:** 
+- `dataset_analises_completas.xlsx` - Dataset final com todas as análises
+- `analises_problemas_precos.txt` - Relatório estatístico
+
+**Colunas adicionadas:**
+| Coluna | Descrição |
+|--------|-----------|
+| `problemas_subcategorias` | ATENDIMENTO, DEMORA, PRODUTO, HIGIENE, etc. |
+| `problemas_score_medio` | Score médio de sentimento (-1 a +1) |
+| `preco_produtos` | Produtos mencionados nas menções de preço |
+| `preco_motivadores` | Motivadores da percepção de preço |
+| `preco_score_medio` | Score médio de sentimento sobre preço |
+
+### Etapa 6: Geração de Gráficos
+
+```bash
+python scripts/05_gerar_graficos_analises.py
+```
+
+**Entrada:** `dataset_analises_completas.xlsx`  
+**Saída:** 9 gráficos PNG na pasta `outputs/`
+
+**Gráficos gerados:**
+1. `fig_problemas_frequencia.png` - Frequência por subcategoria
+2. `fig_problemas_gravidade.png` - Score médio por subcategoria
+3. `fig_problemas_matriz.png` - Matriz de priorização
+4. `fig_coocorrencia_problemas.png` - Heatmap de co-ocorrência
+5. `fig_preco_distribuicao_sentimento.png` - Distribuição de sentimento
+6. `fig_preco_score_produto.png` - Score por produto
+7. `fig_preco_score_motivador.png` - Score por motivador
+8. `fig_correlacao_preco_rating.png` - Correlação score × rating
+9. `fig_efeito_resposta_dono.png` - Efeito da resposta do dono
+
+### Etapa 7: Análise de Posicionamento Digital
+
+```bash
+python scripts/06_analise_posicionamento_digital.py
+```
+
+**Entrada:** `dataset_analises_completas.xlsx`  
+**Saída:** 5 gráficos PNG na pasta `outputs/`
+
+**Gráficos gerados:**
+1. `fig_resposta_rating_medio.png` - Rating médio com/sem resposta do dono
+2. `fig_resposta_pct_por_rating.png` - % de respostas por rating
+3. `fig_localguide_rating_medio.png` - Rating médio Local Guide vs Não Guide
+4. `fig_localguide_distribuicao_rating.png` - Distribuição de ratings por tipo
+5. `fig_interacao_resposta_localguide.png` - Interação Resposta × Local Guide
 
 ## 📊 Categorias Gerenciais
 
