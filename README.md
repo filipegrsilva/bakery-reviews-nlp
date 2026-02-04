@@ -1,4 +1,5 @@
-# bakery-reviews-nlp
+# Análise de sentimentos em avaliações on-line: Uma abordagem para a gestão estratégica do relacionamento com o cliente<img width="442" height="62" alt="image" src="https://github.com/user-attachments/assets/8a1b914b-c467-4eb4-b0bb-011eecd9c22e" />
+
 
 Pipeline de processamento de avaliações do Google Maps para análise de sentimentos e extração de tópicos em padarias, desenvolvido como parte de dissertação de mestrado na FEA-USP.
 
@@ -260,9 +261,9 @@ CONFIG = {
 Se utilizar este código, por favor cite:
 
 ```bibtex
-@mastersthesis{sobrenome2025,
-  author  = {Seu Nome},
-  title   = {Análise de Sentimentos em Avaliações de Padarias},
+@mastersthesis{Ramos 2025,
+  author  = {Filipe Guilherme Ramos},
+  title   = {Análise de sentimentos em avaliações on-line: Uma abordagem para a gestão estratégica do relacionamento com o cliente},
   school  = {FEA-USP},
   year    = {2025},
 }
