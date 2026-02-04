@@ -48,8 +48,8 @@ CONFIG = {
     "checkpoint_interval": 1000,  # Salvar a cada N reviews
     "excel_interval": 10000,      # Salvar Excel a cada N reviews
     "max_reviews": None,          # None = processar todos
-    "max_retries": 2,
-    "timeout": 90,
+    "max_retries": 3,
+    "timeout": 180,               # Timeout maior para reviews longos
 }
 
 CATEGORIAS = ['comida', 'atendimento', 'ambiente', 'preco', 'problemas']
@@ -137,7 +137,7 @@ def chamar_ollama(prompt):
                     "stream": False,
                     "options": {
                         "temperature": 0.1,
-                        "num_predict": 500
+                        "num_predict": 800  # Aumentado para reviews longos
                     }
                 },
                 timeout=CONFIG["timeout"]
@@ -170,7 +170,7 @@ def extrair_json(texto):
 
 
 def analisar_review(review_text):
-    """Analisa um review usando LLM"""
+    """Analisa um review usando LLM (sem truncamento)"""
     if pd.isna(review_text):
         return None
     
@@ -178,7 +178,8 @@ def analisar_review(review_text):
     if len(review_clean) < 10:
         return None
     
-    prompt = PROMPT_TEMPLATE.format(review=review_clean[:500])
+    # Usa texto completo sem truncamento
+    prompt = PROMPT_TEMPLATE.format(review=review_clean)
     resposta = chamar_ollama(prompt)
     
     if resposta is None:
