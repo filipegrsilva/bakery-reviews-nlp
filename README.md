@@ -1,4 +1,4 @@
-# Análise de sentimentos em avaliações on-line: Uma abordagem para a gestão estratégica do relacionamento com o cliente<img width="442" height="62" alt="image" src="https://github.com/user-attachments/assets/8a1b914b-c467-4eb4-b0bb-011eecd9c22e" />
+# Análise de sentimentos em avaliações on-line: Uma abordagem para a gestão estratégica do relacionamento com o cliente
 
 
 Pipeline de processamento de avaliações do Google Maps para análise de sentimentos e extração de tópicos em padarias, desenvolvido como parte de dissertação de mestrado na FEA-USP.
