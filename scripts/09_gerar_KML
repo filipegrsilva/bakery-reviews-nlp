@@ -30,6 +30,7 @@ Data: 2025
 import pandas as pd
 import json
 import argparse
+import sys
 
 # Tqdm é opcional
 try:
@@ -272,13 +273,17 @@ def gerar_descricao(indicadores: dict, place_name: str, ranking: int = None, tot
             POS    NEU    NEG
 '''
     
+    f_neu = '⚪' # Emoji para Neutro
+    
     for cat in ORDEM_CATEGORIAS:
         if cat in indicadores.get('sentimentos_por_categoria', {}):
             d = indicadores['sentimentos_por_categoria'][cat]
             f_pos = farol(d['positivo'], 'positivo')
             f_neg = farol(d['negativo'], 'negativo')
             label = CATEGORIA_LABEL.get(cat, cat.title())
-            desc += f"{label:8} {f_pos}{d['positivo']:4.0f}%  {d['neutro']:4.0f}%  {f_neg}{d['negativo']:4.0f}%\n"
+            
+            # Formatação ajustada com f_neu para alinhamento
+            desc += f"{label:8} {f_pos}{d['positivo']:4.0f}%  {f_neu}{d['neutro']:4.0f}%  {f_neg}{d['negativo']:4.0f}%\n"
 
     # Top evidências
     desc += '''
@@ -309,12 +314,16 @@ def gerar_kml(input_file: str, output_file: str) -> None:
     """
     
     print(f"\n📂 Carregando {input_file}...")
-    df = pd.read_excel(input_file)
+    try:
+        df = pd.read_excel(input_file)
+    except FileNotFoundError:
+        print(f"❌ Erro: Arquivo '{input_file}' não encontrado.")
+        sys.exit(1)
     
     # Verificar coordenadas
     if 'lat' not in df.columns or 'lng' not in df.columns:
         print("❌ Dataset não possui colunas 'lat' e 'lng'!")
-        print("   Execute primeiro: python 08_extrair_coordenadas.py --input seu_dataset.xlsx")
+        print("   Execute primeiro o script de extração de coordenadas.")
         return
     
     total_padarias = df['place_id'].nunique()
@@ -362,7 +371,7 @@ def gerar_kml(input_file: str, output_file: str) -> None:
         
         lat = df_padaria['lat'].iloc[0]
         lng = df_padaria['lng'].iloc[0]
-        place_name = df_padaria['place_name'].iloc[0]
+        place_name = str(df_padaria['place_name'].iloc[0])
         
         if pd.isna(lat) or pd.isna(lng):
             sem_coords += 1
@@ -384,7 +393,7 @@ def gerar_kml(input_file: str, output_file: str) -> None:
             style_id = 'vermelho'
         
         # Escapar nome para XML
-        place_name_safe = place_name.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+        place_name_safe = place_name.replace('&', '&').replace('<', '<').replace('>', '>')
         
         # Gerar descrição
         descricao = gerar_descricao(indicadores, place_name, ranking, total_padarias)
@@ -409,27 +418,31 @@ def gerar_kml(input_file: str, output_file: str) -> None:
 </kml>'''
     
     # Salvar
-    with open(output_file, 'w', encoding='utf-8') as f:
-        f.write(kml_content)
-    
-    print(f"\n✅ KML gerado: {output_file}")
-    print(f"   🟢 Padarias no mapa: {len(placemarks)}")
-    print(f"   ⚠️  Sem coordenadas: {sem_coords}")
-    
-    # Estatísticas por cor
-    verdes = sum(1 for p in placemarks if '#verde' in p)
-    amarelos = sum(1 for p in placemarks if '#amarelo' in p)
-    vermelhos = sum(1 for p in placemarks if '#vermelho' in p)
-    print(f"\n📊 Distribuição:")
-    print(f"   🟢 Verde (score ≥ +0.2): {verdes}")
-    print(f"   🟡 Amarelo (-0.2 a +0.2): {amarelos}")
-    print(f"   🔴 Vermelho (score < -0.2): {vermelhos}")
-    
-    print(f"\n📍 Como usar:")
-    print(f"   1. Acesse https://www.google.com/maps/d/")
-    print(f"   2. Clique em 'Criar novo mapa'")
-    print(f"   3. Clique em 'Importar' → selecione {output_file}")
-    print(f"   4. Clique nas padarias para ver os indicadores!")
+    try:
+        with open(output_file, 'w', encoding='utf-8') as f:
+            f.write(kml_content)
+        
+        print(f"\n✅ KML gerado: {output_file}")
+        print(f"   🟢 Padarias no mapa: {len(placemarks)}")
+        print(f"   ⚠️  Sem coordenadas: {sem_coords}")
+        
+        # Estatísticas por cor
+        verdes = sum(1 for p in placemarks if '#verde' in p)
+        amarelos = sum(1 for p in placemarks if '#amarelo' in p)
+        vermelhos = sum(1 for p in placemarks if '#vermelho' in p)
+        print(f"\n📊 Distribuição:")
+        print(f"   🟢 Verde (score ≥ +0.2): {verdes}")
+        print(f"   🟡 Amarelo (-0.2 a +0.2): {amarelos}")
+        print(f"   🔴 Vermelho (score < -0.2): {vermelhos}")
+        
+        print(f"\n📍 Como usar:")
+        print(f"   1. Acesse https://www.google.com/maps/d/")
+        print(f"   2. Clique em 'Criar novo mapa'")
+        print(f"   3. Clique em 'Importar' → selecione {output_file}")
+        print(f"   4. Clique nas padarias para ver os indicadores!")
+        
+    except Exception as e:
+        print(f"❌ Erro ao salvar arquivo: {e}")
 
 
 # =============================================================================
@@ -443,7 +456,7 @@ if __name__ == '__main__':
     parser.add_argument(
         '--input', '-i', 
         required=True, 
-        help='Arquivo Excel com coordenadas (output do script 08)'
+        help='Arquivo Excel com coordenadas'
     )
     parser.add_argument(
         '--output', '-o', 
