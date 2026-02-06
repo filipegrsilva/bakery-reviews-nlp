@@ -1,0 +1,455 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+09_gerar_kml_mapa.py
+====================
+Gera arquivo KML para Google My Maps com indicadores consolidados por padaria.
+
+Este script consolida as análises de sentimento por padaria e gera um arquivo
+KML que pode ser importado no Google My Maps para visualização geográfica.
+
+Indicadores exibidos no popup:
+- Score de sentimento (escala -1 a +1)
+- Ranking entre todas as padarias
+- Nota média do Google
+- % Sentimentos por categoria (com faróis coloridos)
+- Taxa de resposta do dono
+- % de avaliadores Local Guides
+- Top evidências positivas e negativas
+
+Requisitos:
+    pip install pandas openpyxl tqdm
+
+Uso:
+    python 09_gerar_kml_mapa.py --input dataset_com_coords.xlsx --output padarias.kml
+
+Autor: Filipe Silva
+Data: 2025
+"""
+
+import pandas as pd
+import json
+import argparse
+
+# Tqdm é opcional
+try:
+    from tqdm import tqdm
+except ImportError:
+    def tqdm(iterable, **kwargs):
+        return iterable
+
+
+# =============================================================================
+# CONFIGURAÇÕES
+# =============================================================================
+
+SENTIMENTO_SCORE = {
+    'positivo': 1.0, 
+    'neutro': 0.0, 
+    'negativo': -1.0
+}
+
+CATEGORIA_LABEL = {
+    'comida': 'Comida', 
+    'atendimento': 'Atend.', 
+    'ambiente': 'Ambiente', 
+    'preco': 'Preço', 
+    'problemas': 'Probl.'
+}
+
+ORDEM_CATEGORIAS = ['comida', 'atendimento', 'ambiente', 'preco', 'problemas']
+
+
+# =============================================================================
+# FUNÇÕES DE CONSOLIDAÇÃO
+# =============================================================================
+
+def parsear_llm_json(json_str) -> list:
+    """
+    Parseia o campo llm_analise_json.
+    
+    Args:
+        json_str: String JSON ou dict com análises
+        
+    Returns:
+        Lista de análises
+    """
+    if pd.isna(json_str):
+        return []
+    try:
+        data = json.loads(json_str) if isinstance(json_str, str) else json_str
+        return data.get('analises', [])
+    except:
+        return []
+
+
+def consolidar_padaria(df_padaria: pd.DataFrame) -> dict:
+    """
+    Consolida indicadores para uma padaria.
+    
+    Args:
+        df_padaria: DataFrame filtrado para uma padaria
+        
+    Returns:
+        Dicionário com indicadores consolidados
+    """
+    
+    # Extrair todas as análises
+    todas_analises = []
+    for _, row in df_padaria.iterrows():
+        for analise in parsear_llm_json(row.get('llm_analise_json')):
+            todas_analises.append({
+                'categoria': analise.get('categoria', '').lower(),
+                'sentimento': analise.get('sentimento', '').lower(),
+                'evidencia': analise.get('evidencia', '')
+            })
+    
+    if not todas_analises:
+        return None
+    
+    # 1. Sentimentos por categoria
+    sentimentos_por_categoria = {}
+    for cat in set(a['categoria'] for a in todas_analises if a['categoria']):
+        cat_analises = [a for a in todas_analises if a['categoria'] == cat]
+        total = len(cat_analises)
+        if total > 0:
+            sentimentos_por_categoria[cat] = {
+                'positivo': round(sum(1 for a in cat_analises if a['sentimento'] == 'positivo') / total * 100, 1),
+                'neutro': round(sum(1 for a in cat_analises if a['sentimento'] == 'neutro') / total * 100, 1),
+                'negativo': round(sum(1 for a in cat_analises if a['sentimento'] == 'negativo') / total * 100, 1),
+                'total': total
+            }
+    
+    # 2. Top evidências (3 positivas + 3 negativas)
+    positivas = [a for a in todas_analises if a['sentimento'] == 'positivo' and a['evidencia']][:3]
+    negativas = [a for a in todas_analises if a['sentimento'] == 'negativo' and a['evidencia']][:3]
+    top_evidencias = positivas + negativas
+    
+    # 3. Score médio
+    scores = [SENTIMENTO_SCORE.get(a['sentimento'], 0) for a in todas_analises]
+    score_medio = sum(scores) / len(scores) if scores else 0
+    
+    # 4. Indicadores adicionais
+    total_reviews = len(df_padaria)
+    
+    # Rating Google
+    rating_google = None
+    if 'rating' in df_padaria.columns:
+        rating_google = df_padaria['rating'].mean()
+        if pd.notna(rating_google):
+            rating_google = round(rating_google, 2)
+        else:
+            rating_google = None
+    
+    # Taxa de resposta do dono
+    respostas = 0
+    if 'response_from_owner_text' in df_padaria.columns:
+        respostas = df_padaria['response_from_owner_text'].notna().sum()
+    taxa_resposta = round(respostas / total_reviews * 100, 1) if total_reviews > 0 else 0
+    
+    # % Local Guides
+    local_guides = 0
+    if 'is_local_guide' in df_padaria.columns:
+        local_guides = df_padaria['is_local_guide'].sum()
+    pct_local_guides = round(local_guides / total_reviews * 100, 1) if total_reviews > 0 else 0
+    
+    # Faixa de preço
+    price_range = None
+    if 'price_range' in df_padaria.columns:
+        pr = df_padaria['price_range'].iloc[0]
+        if pd.notna(pr) and str(pr).strip() and str(pr) != 'nan':
+            price_range = str(pr)
+    
+    return {
+        'sentimentos_por_categoria': sentimentos_por_categoria,
+        'top_evidencias': [(e['evidencia'], e['sentimento']) for e in top_evidencias],
+        'score_medio': round(score_medio, 3),
+        'total_reviews': total_reviews,
+        'total_analises': len(todas_analises),
+        'rating_google': rating_google,
+        'taxa_resposta': taxa_resposta,
+        'pct_local_guides': pct_local_guides,
+        'price_range': price_range
+    }
+
+
+# =============================================================================
+# GERAÇÃO DE FARÓIS E DESCRIÇÃO
+# =============================================================================
+
+def farol(valor: float, tipo: str = 'score') -> str:
+    """
+    Retorna emoji de farol colorido baseado no valor.
+    
+    Args:
+        valor: Valor numérico
+        tipo: Tipo de farol ('score', 'positivo', 'negativo')
+        
+    Returns:
+        Emoji do farol (🟢, 🟡, 🔴)
+    """
+    if tipo == 'score':
+        if valor >= 0.2:
+            return '🟢'
+        elif valor >= -0.2:
+            return '🟡'
+        else:
+            return '🔴'
+    elif tipo == 'positivo':
+        if valor >= 60:
+            return '🟢'
+        elif valor >= 40:
+            return '🟡'
+        else:
+            return '🔴'
+    elif tipo == 'negativo':
+        if valor >= 30:
+            return '🔴'  # Ruim ter muito negativo
+        elif valor >= 15:
+            return '🟡'
+        else:
+            return '🟢'  # Bom ter pouco negativo
+    return '⚪'
+
+
+def gerar_descricao(indicadores: dict, place_name: str, ranking: int = None, total_padarias: int = None) -> str:
+    """
+    Gera descrição em texto formatado para popup do My Maps.
+    
+    Args:
+        indicadores: Dicionário com indicadores consolidados
+        place_name: Nome da padaria
+        ranking: Posição no ranking
+        total_padarias: Total de padarias
+        
+    Returns:
+        String formatada para o popup
+    """
+    
+    score = indicadores.get('score_medio', 0)
+    
+    # Status
+    if score >= 0.2:
+        status = 'BOM'
+    elif score >= -0.2:
+        status = 'REGULAR'
+    else:
+        status = 'RUIM'
+    
+    # Cabeçalho com nome da padaria
+    desc = f'''━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🥖 {place_name.upper()}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+📊 RESUMO GERAL
+{farol(score, 'score')} Score Sentimento: {score:+.2f} ({status})
+'''
+    
+    # Ranking (se disponível)
+    if ranking and total_padarias:
+        desc += f"🏆 Ranking: #{ranking} de {total_padarias}\n"
+    
+    # Nota Google
+    if indicadores.get('rating_google'):
+        desc += f"⭐ Nota Google: {indicadores['rating_google']}\n"
+    
+    desc += f"📝 Avaliações: {indicadores.get('total_reviews', 0):,}\n"
+    desc += f"💬 Menções analisadas: {indicadores.get('total_analises', 0):,}\n"
+    
+    # Indicadores extras
+    if indicadores.get('taxa_resposta', 0) > 0:
+        desc += f"↩️ Taxa resposta dono: {indicadores['taxa_resposta']:.0f}%\n"
+    if indicadores.get('pct_local_guides', 0) > 0:
+        desc += f"🏅 Local Guides: {indicadores['pct_local_guides']:.0f}%\n"
+    if indicadores.get('price_range'):
+        desc += f"💰 Faixa de preço: {indicadores['price_range']}\n"
+
+    # Tabela de sentimentos
+    desc += '''
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+📈 SENTIMENTOS POR CATEGORIA
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+            POS    NEU    NEG
+'''
+    
+    for cat in ORDEM_CATEGORIAS:
+        if cat in indicadores.get('sentimentos_por_categoria', {}):
+            d = indicadores['sentimentos_por_categoria'][cat]
+            f_pos = farol(d['positivo'], 'positivo')
+            f_neg = farol(d['negativo'], 'negativo')
+            label = CATEGORIA_LABEL.get(cat, cat.title())
+            desc += f"{label:8} {f_pos}{d['positivo']:4.0f}%  {d['neutro']:4.0f}%  {f_neg}{d['negativo']:4.0f}%\n"
+
+    # Top evidências
+    desc += '''
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+💬 O QUE DIZEM
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+'''
+    
+    for evidencia, sentimento in indicadores.get('top_evidencias', [])[:6]:
+        emoji = '✅' if sentimento == 'positivo' else ('❌' if sentimento == 'negativo' else '➖')
+        ev = (evidencia[:50] + '...') if len(evidencia) > 50 else evidencia
+        desc += f"{emoji} {ev}\n"
+    
+    return desc
+
+
+# =============================================================================
+# GERAÇÃO DO KML
+# =============================================================================
+
+def gerar_kml(input_file: str, output_file: str) -> None:
+    """
+    Gera arquivo KML para Google My Maps.
+    
+    Args:
+        input_file: Arquivo Excel com coordenadas
+        output_file: Arquivo KML de saída
+    """
+    
+    print(f"\n📂 Carregando {input_file}...")
+    df = pd.read_excel(input_file)
+    
+    # Verificar coordenadas
+    if 'lat' not in df.columns or 'lng' not in df.columns:
+        print("❌ Dataset não possui colunas 'lat' e 'lng'!")
+        print("   Execute primeiro: python 08_extrair_coordenadas.py --input seu_dataset.xlsx")
+        return
+    
+    total_padarias = df['place_id'].nunique()
+    print(f"   {len(df):,} reviews | {total_padarias} padarias")
+    
+    # Calcular ranking por score
+    print("\n📊 Calculando rankings...")
+    rankings = {}
+    scores_padarias = []
+    
+    for place_id in df['place_id'].unique():
+        df_padaria = df[df['place_id'] == place_id]
+        indicadores = consolidar_padaria(df_padaria)
+        if indicadores:
+            scores_padarias.append((place_id, indicadores['score_medio']))
+    
+    # Ordenar por score (maior = melhor ranking)
+    scores_padarias.sort(key=lambda x: x[1], reverse=True)
+    for i, (place_id, _) in enumerate(scores_padarias, 1):
+        rankings[place_id] = i
+    
+    # Início do KML
+    kml_content = '''<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Document>
+<name>Padarias SP - Analise de Sentimentos</name>
+<description>Mapa de sentimentos das padarias paulistanas</description>
+
+<Style id="verde">
+  <IconStyle><scale>1.3</scale><Icon><href>http://maps.google.com/mapfiles/kml/paddle/grn-circle.png</href></Icon></IconStyle>
+</Style>
+<Style id="amarelo">
+  <IconStyle><scale>1.3</scale><Icon><href>http://maps.google.com/mapfiles/kml/paddle/ylw-circle.png</href></Icon></IconStyle>
+</Style>
+<Style id="vermelho">
+  <IconStyle><scale>1.3</scale><Icon><href>http://maps.google.com/mapfiles/kml/paddle/red-circle.png</href></Icon></IconStyle>
+</Style>
+'''
+    
+    placemarks = []
+    sem_coords = 0
+    
+    for place_id in tqdm(df['place_id'].unique(), desc="Gerando KML"):
+        df_padaria = df[df['place_id'] == place_id]
+        
+        lat = df_padaria['lat'].iloc[0]
+        lng = df_padaria['lng'].iloc[0]
+        place_name = df_padaria['place_name'].iloc[0]
+        
+        if pd.isna(lat) or pd.isna(lng):
+            sem_coords += 1
+            continue
+        
+        indicadores = consolidar_padaria(df_padaria)
+        if not indicadores:
+            continue
+        
+        score = indicadores.get('score_medio', 0)
+        ranking = rankings.get(place_id)
+        
+        # Determinar estilo (cor do pin)
+        if score >= 0.2:
+            style_id = 'verde'
+        elif score >= -0.2:
+            style_id = 'amarelo'
+        else:
+            style_id = 'vermelho'
+        
+        # Escapar nome para XML
+        place_name_safe = place_name.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;')
+        
+        # Gerar descrição
+        descricao = gerar_descricao(indicadores, place_name, ranking, total_padarias)
+        
+        # Criar placemark
+        placemark = f'''
+<Placemark>
+  <name>{place_name_safe}</name>
+  <description><![CDATA[{descricao}]]></description>
+  <styleUrl>#{style_id}</styleUrl>
+  <Point>
+    <coordinates>{lng},{lat},0</coordinates>
+  </Point>
+</Placemark>'''
+        
+        placemarks.append(placemark)
+    
+    # Finalizar KML
+    kml_content += '\n'.join(placemarks)
+    kml_content += '''
+</Document>
+</kml>'''
+    
+    # Salvar
+    with open(output_file, 'w', encoding='utf-8') as f:
+        f.write(kml_content)
+    
+    print(f"\n✅ KML gerado: {output_file}")
+    print(f"   🟢 Padarias no mapa: {len(placemarks)}")
+    print(f"   ⚠️  Sem coordenadas: {sem_coords}")
+    
+    # Estatísticas por cor
+    verdes = sum(1 for p in placemarks if '#verde' in p)
+    amarelos = sum(1 for p in placemarks if '#amarelo' in p)
+    vermelhos = sum(1 for p in placemarks if '#vermelho' in p)
+    print(f"\n📊 Distribuição:")
+    print(f"   🟢 Verde (score ≥ +0.2): {verdes}")
+    print(f"   🟡 Amarelo (-0.2 a +0.2): {amarelos}")
+    print(f"   🔴 Vermelho (score < -0.2): {vermelhos}")
+    
+    print(f"\n📍 Como usar:")
+    print(f"   1. Acesse https://www.google.com/maps/d/")
+    print(f"   2. Clique em 'Criar novo mapa'")
+    print(f"   3. Clique em 'Importar' → selecione {output_file}")
+    print(f"   4. Clique nas padarias para ver os indicadores!")
+
+
+# =============================================================================
+# MAIN
+# =============================================================================
+
+if __name__ == '__main__':
+    parser = argparse.ArgumentParser(
+        description='Gera KML para Google My Maps com indicadores de sentimento'
+    )
+    parser.add_argument(
+        '--input', '-i', 
+        required=True, 
+        help='Arquivo Excel com coordenadas (output do script 08)'
+    )
+    parser.add_argument(
+        '--output', '-o', 
+        default='padarias_mapa.kml', 
+        help='Arquivo KML de saída (default: padarias_mapa.kml)'
+    )
+    
+    args = parser.parse_args()
+    gerar_kml(args.input, args.output)
