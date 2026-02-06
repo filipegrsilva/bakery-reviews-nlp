@@ -24,6 +24,9 @@ bakery-reviews-nlp/
 │   ├── 05_gerar_graficos_analises.py     # Geração de gráficos de análises
 │   ├── 06_analise_posicionamento_digital.py # Análise resposta do dono e Local Guide
 │   └── 07_gerar_figuras_dissertacao.py   # Geração de TODAS as figuras (11-30)
+│   └── 08_extrair_coordenadas.py         # Extrair coordenadas de cada padaria a partir dos links dos reviews
+│   └── 09_gerar_kml_mapa.py              # Gera camada KML para Google Maps
+  
 ├── config/
 │   └── exemplo_topicos_para_selecao.json # Exemplo de JSON para curadoria
 ├── data/
