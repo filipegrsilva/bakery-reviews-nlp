@@ -11,7 +11,10 @@ Este repositório contém os scripts utilizados para:
 3. **Análise de sentimentos** - Classificação de sentimentos por categoria usando LLM (Llama 3.1)
 4. **Análise de problemas e preços** - Detalhamento de subcategorias, produtos e motivadores
 5. **Geração de gráficos** - Visualizações para análise gerencial
-
+6. **Análise posicionamento digitals** - Teste de hipótese entre resposta de proprietários e nota
+7. **Geração de figuras**  - Geração de todas as figuras apresentadas no texto
+8. **Extrair Coordenadas** - Extração de latitude e longitude de padarias, a partir do review_link
+9. **Gerar KML** - Geração da camada KML para Google Maps
 ## 🗂️ Estrutura do Projeto
 
 ```
