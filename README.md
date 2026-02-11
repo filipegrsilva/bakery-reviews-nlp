@@ -267,11 +267,11 @@ CONFIG = {
 Se utilizar este código, por favor cite:
 
 ```bibtex
-@mastersthesis{Ramos 2025,
+@mastersthesis{Ramos 2026,
   author  = {Filipe Guilherme Ramos},
   title   = {Análise de sentimentos em avaliações on-line: Uma abordagem para a gestão estratégica do relacionamento com o cliente},
   school  = {FEA-USP},
-  year    = {2025},
+  year    = {2026},
 }
 ```
 
